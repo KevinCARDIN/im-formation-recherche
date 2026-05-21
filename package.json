@@ -1,0 +1,12 @@
+{
+  "name": "search-bar-railway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Barre de recherche par mot-cle pour les lecons ThriveCart Learn (recherche floue cote navigateur, integree en iframe)",
+  "scripts": {
+    "start": "serve -s . -l $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}

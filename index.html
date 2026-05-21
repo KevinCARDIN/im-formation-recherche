@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recherche dans la formation</title>
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: transparent;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #1a1a1a;
+    }
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 14px 16px;
+    }
+    .bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1px solid #e3e3e6;
+      border-radius: 999px;
+      padding: 10px 18px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+      transition: box-shadow .2s, border-color .2s;
+    }
+    .bar:focus-within {
+      border-color: #b9c4ff;
+      box-shadow: 0 4px 16px rgba(60, 80, 220, 0.15);
+    }
+    .bar svg {
+      width: 18px; height: 18px;
+      color: #7a7a85;
+      flex-shrink: 0;
+    }
+    .bar input {
+      flex: 1;
+      border: 0;
+      outline: 0;
+      font-size: 16px;
+      background: transparent;
+      color: inherit;
+    }
+    .bar input::placeholder { color: #9b9ba3; }
+    .clear {
+      cursor: pointer;
+      border: 0;
+      background: transparent;
+      color: #9b9ba3;
+      font-size: 18px;
+      line-height: 1;
+      padding: 2px 6px;
+      visibility: hidden;
+    }
+    .bar.has-text .clear { visibility: visible; }
+    .results {
+      margin-top: 10px;
+      background: #ffffff;
+      border: 1px solid #ececef;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    .results.hidden { display: none; }
+    .result {
+      display: block;
+      padding: 12px 18px;
+      border-bottom: 1px solid #f4f4f6;
+      color: inherit;
+      text-decoration: none;
+    }
+    .result:last-child { border-bottom: 0; }
+    .result:hover { background: #f7f7fa; }
+    .result .title { font-weight: 600; color: #111; font-size: 15px; }
+    .result .module {
+      font-size: 12px;
+      color: #8a8a92;
+      margin-top: 3px;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+    .empty {
+      padding: 16px 18px;
+      color: #8a8a92;
+      font-size: 14px;
+    }
+    .hint {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #9b9ba3;
+      padding-left: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="bar" class="bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input id="q" type="text"
+             placeholder="Rechercher une leçon, un sujet, un mot-clé…"
+             autocomplete="off"
+             aria-label="Rechercher dans la formation" />
+      <button id="clear" class="clear" type="button" aria-label="Effacer">×</button>
+    </div>
+    <div id="results" class="results hidden" role="listbox"></div>
+    <div id="hint" class="hint">Tape au moins 2 caractères pour lancer la recherche.</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.0/dist/umd/index.min.js"></script>
+  <script>
+    (async function () {
+      const $ = (id) => document.getElementById(id);
+      const bar = $('bar'), input = $('q'), out = $('results'), hint = $('hint'), clear = $('clear');
+
+      function escape(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+          { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+      }
+
+      function showHint(text) { hint.textContent = text; hint.style.display = ''; }
+      function hideHint() { hint.style.display = 'none'; }
+
+      let lessons = [];
+      try {
+        const res = await fetch('./lessons.json', { cache: 'no-store' });
+        lessons = await res.json();
+      } catch (e) {
+        showHint('Impossible de charger l’index des leçons.');
+        return;
+      }
+
+      if (!Array.isArray(lessons) || lessons.length === 0) {
+        showHint('L’index des leçons est vide. (Le crawl n’a pas encore été effectué.)');
+        return;
+      }
+
+      const mini = new MiniSearch({
+        fields: ['title', 'module', 'course', 'content'],
+        storeFields: ['title', 'module', 'course', 'url'],
+        searchOptions: {
+          boost: { title: 3, module: 2, course: 1 },
+          prefix: true,
+          fuzzy: 0.2,
+          combineWith: 'AND'
+        }
+      });
+      mini.addAll(lessons.map((l, i) => ({ id: i, ...l })));
+
+      function render(items) {
+        if (!items.length) {
+          out.classList.remove('hidden');
+          out.innerHTML = '<div class="empty">Aucune leçon ne correspond à ta recherche.</div>';
+          return;
+        }
+        out.classList.remove('hidden');
+        out.innerHTML = items.slice(0, 12).map(r => {
+          const parts = [];
+          if (r.course) parts.push(escape(r.course));
+          if (r.module) parts.push(escape(r.module));
+          return `
+          <a class="result" href="${escape(r.url)}" target="_blank" rel="noopener noreferrer">
+            <div class="title">${escape(r.title)}</div>
+            <div class="module">${parts.join(' &middot; ')}</div>
+          </a>`;
+        }).join('');
+      }
+
+      function reset() {
+        out.classList.add('hidden');
+        out.innerHTML = '';
+        showHint('Tape au moins 2 caractères pour lancer la recherche.');
+      }
+
+      input.addEventListener('input', () => {
+        const q = input.value.trim();
+        bar.classList.toggle('has-text', q.length > 0);
+        if (q.length < 2) { reset(); return; }
+        hideHint();
+        const hits = mini.search(q);
+        render(hits);
+      });
+
+      clear.addEventListener('click', () => {
+        input.value = '';
+        bar.classList.remove('has-text');
+        input.focus();
+        reset();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          input.value = '';
+          bar.classList.remove('has-text');
+          reset();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
