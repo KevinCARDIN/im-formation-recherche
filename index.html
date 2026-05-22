@@ -62,8 +62,7 @@
       background: #ffffff;
       border: 1px solid #ececef;
       border-radius: 14px;
-      overflow-y: auto;
-      max-height: 420px;
+      overflow: hidden;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
     }
     .results.hidden { display: none; }
@@ -162,7 +161,7 @@
           return;
         }
         out.classList.remove('hidden');
-        out.innerHTML = items.slice(0, 12).map(r => {
+        out.innerHTML = items.slice(0, 8).map(r => {
           const parts = [];
           if (r.course) parts.push(escape(r.course));
           if (r.module) parts.push(escape(r.module));
