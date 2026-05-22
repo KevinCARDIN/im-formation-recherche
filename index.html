@@ -104,13 +104,13 @@
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
       <input id="q" type="text"
-             placeholder="Rechercher une leçon, un sujet, un mot-clé…"
+             placeholder="Recherche"
              autocomplete="off"
              aria-label="Rechercher dans la formation" />
       <button id="clear" class="clear" type="button" aria-label="Effacer">×</button>
     </div>
     <div id="results" class="results hidden" role="listbox"></div>
-    <div id="hint" class="hint">Tape au moins 2 caractères pour lancer la recherche.</div>
+    <div id="hint" class="hint" style="display:none"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.0/dist/umd/index.min.js"></script>
@@ -166,7 +166,7 @@
           if (r.course) parts.push(escape(r.course));
           if (r.module) parts.push(escape(r.module));
           return `
-          <a class="result" href="${escape(r.url)}" target="_blank" rel="noopener noreferrer">
+          <a class="result" href="${escape(r.url)}" target="_top">
             <div class="title">${escape(r.title)}</div>
             <div class="module">${parts.join(' &middot; ')}</div>
           </a>`;
@@ -176,7 +176,7 @@
       function reset() {
         out.classList.add('hidden');
         out.innerHTML = '';
-        showHint('Tape au moins 2 caractères pour lancer la recherche.');
+        hideHint();
       }
 
       input.addEventListener('input', () => {
