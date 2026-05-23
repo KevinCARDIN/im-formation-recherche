@@ -66,6 +66,10 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
     }
     .results.hidden { display: none; }
+    /* Sur mobile (iframe étroite) : résultats scrollables pour tenir dans le cadre en ligne */
+    @media (max-width: 768px) {
+      .results { max-height: 70vh; overflow-y: auto; }
+    }
     .result {
       display: block;
       padding: 12px 18px;
