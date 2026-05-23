@@ -66,9 +66,14 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
     }
     .results.hidden { display: none; }
-    /* Sur mobile (iframe étroite) : résultats scrollables pour tenir dans le cadre en ligne */
+    /* Sur mobile (iframe étroite) :
+       - on verrouille le scroll interne du cadre → la barre ne "bouge" plus
+       - la barre reste collée en haut, seuls les résultats défilent */
     @media (max-width: 768px) {
-      .results { max-height: 70vh; overflow-y: auto; }
+      html, body { height: 100%; overflow: hidden; }
+      .wrap { padding: 8px 10px; }
+      .bar { position: sticky; top: 0; }
+      .results { max-height: calc(100% - 72px); overflow-y: auto; }
     }
     .result {
       display: block;
