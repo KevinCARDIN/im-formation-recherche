@@ -216,6 +216,25 @@
           reset();
         }
       });
+
+      // FIX vidéo bloquée : quand la souris quitte le cadre de recherche,
+      // on retire le focus de l'input → :focus-within ne match plus côté parent
+      // → l'iframe revient à 64px et libère la zone vidéo en-dessous
+      document.addEventListener('mouseleave', () => {
+        if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+          document.activeElement.blur();
+        }
+      });
+      // Idem si l'utilisateur scroll : il n'est probablement plus en train de chercher
+      let scrollBlurTimer;
+      window.addEventListener('scroll', () => {
+        clearTimeout(scrollBlurTimer);
+        scrollBlurTimer = setTimeout(() => {
+          if (document.activeElement && document.activeElement.tagName === 'INPUT' && !input.value) {
+            input.blur();
+          }
+        }, 150);
+      }, { passive: true });
     })();
   </script>
 </body>
